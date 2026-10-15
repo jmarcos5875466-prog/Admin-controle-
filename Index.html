@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Firebase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCL0CLeKCDzpKah_kqY",
+            authDomain: "gerenciadorsenhaapp.firebaseapp.com",
+            projectId: "gerenciadorsenhaapp",
+            storageBucket: "gerenciadorsenhaapp.appspot.com",
+            messagingSenderId: "369927629790",
+            appId: "1:369927629790:web:176731...",
+            measurementId: "G-YFLDPYQL4X"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Carregar configurações atuais ao abrir a página
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const docRef = doc(db, "config", "appSettings");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById("new-password").value = data.password || "";
+                    document.getElementById("maintenance-toggle").checked = data.isMaintenance || false;
+                }
+            } catch (err) {
+                showNotification("Erro ao carregar configurações do banco.", "error");
+            }
+        });
+
+        window.saveSettings = async function() {
+            const newPassword = document.getElementById("new-password").value.trim();
+            const isMaintenance = document.getElementById("maintenance-toggle").checked;
+            
+            if (!newPassword) {
+                showNotification("A senha não pode estar vazia.", "error");
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "config", "appSettings");
+                await updateDoc(docRef, {
+                    password: newPassword,
+                    isMaintenance: isMaintenance
+                });
+                showNotification("Configurações atualizadas com sucesso!", "success");
+            } catch (err) {
+                showNotification("Erro ao salvar no banco de dados.", "error");
+            }
+        }
+
+        function showNotification(message, type) {
+            const alertBox = document.getElementById("notification");
+            alertBox.textContent = message;
+            alertBox.className = `mb-4 p-3 rounded-xl text-xs text-center border ${
+                type === 'success' 
+                    ? 'bg-emerald-950/40 border-emerald-900 text-emerald-300' 
+                    : 'bg-red-950/40 border-red-900 text-red-300'
+            }`;
+            alertBox.classList.remove("hidden");
+            setTimeout(() => alertBox.classList.add("hidden"), 4000);
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center font-sans selection:bg-indigo-500 selection:text-white">
+
+    <div class="max-w-md w-full mx-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="inline-block bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-500/20 mb-3">
+                    <i class="fa-solid fa-sliders text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Painel Administrativo</h1>
+                <p class="text-xs text-slate-400 mt-1">Gerencie a segurança e o estado do app</p>
+            </div>
+
+            <div id="notification" class="hidden"></div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Alterar Senha de Acesso</label>
+                    <input type="text" id="new-password" placeholder="Nova senha..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition text-center tracking-widest font-mono">
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+                    <div>
+                        <span class="block text-xs font-medium text-slate-200">Modo de Manutenção</span>
+                        <span class="text-[10px] text-slate-400">Bloqueia o acesso de todos os usuários</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="maintenance-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                </div>
+
+                <button onclick="saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
